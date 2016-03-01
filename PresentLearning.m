@@ -80,6 +80,7 @@ fishindices = [p(:) q(:)];
 %Input recording/display variables
 moves = [];
 correct_ans = [];
+input_timing = [];
 if social==true
     move_index = 1;
 end
@@ -145,17 +146,22 @@ for stage=1:3
             % For help see: Screen Flip?
             Screen('Flip', window,0,1);
             
+            %Start timing input if in non-social mode
             % Now we have drawn to the screen we wait for a keyboard button press (any
             % key) to terminate the demo. For help see: help KbStrokeWait
             %For now putting while loop but needs to be done as multiple
             %inputs.. Or maybe not to avoid unwanted inputs
             if(social~=true)    %Take input and give feedback
+                initsec = GetSecs;
                 while(true)
                     [secs,keycode,deltasec] = KbStrokeWait;
                     rightarrow = KbName('RightArrow');
                     leftarrow = KbName('LeftArrow');
                     escape = KbName('ESCAPE');
                     if keycode(rightarrow) || keycode(leftarrow)
+                        %Capture time
+                        endsec = GetSecs;
+                        input_timing = [input_timing (endsec-initsec)];
                         %Detect if correct answer
                         if (keycode(leftarrow) && all_combo(displayperm(trial),7) == 1) || (keycode(rightarrow) && all_combo(displayperm(trial),7) == 2)
                             display_color = [0 1 0];
@@ -206,10 +212,12 @@ for stage=1:3
                 else
                     Screen('FrameOval',window,display_color,GrowRect(X2_dst_rect,15,15),3,3);
                 end
+                %Wait as long as input user did before display.
+                WaitSecs(loaded_values.input_timing(move_index));
                 move_index = move_index+1;
                 Screen('Flip', window);
-                %For now waiting for constant 5 sec.
-                WaitSecs(5);
+                %Wait 1 sec before clearing like in non-social input
+                WaitSecs(1);
             end
             %Clear screen and display blank for 1 sec
             Screen('Flip', window);
@@ -230,6 +238,6 @@ end
 % For help see: help sca
 sca;
 if social~=true
-    save(fid,'out_rngstate','moves','correct_ans');
+    save(fid,'out_rngstate','moves','correct_ans','input_timing');
 end
 end
