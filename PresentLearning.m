@@ -109,7 +109,7 @@ for stage=1:3
             A_neww = A_asp_ratio*A_newh;
             A_theRect = [0 0 A_neww A_newh];
             %Position it in X center and 1/4th way from top.
-            A_dst_rect = CenterRectOnPointd(A_theRect,screenXpixels/2,screenYpixels/4);
+            A_dst_rect = CenterRectOnPointd(A_theRect,screenXpixels/2,screenYpixels/6);
             
             [Xs1,Xs2,Xs3] = size(fish{all_combo(displayperm(trial),3),all_combo(displayperm(trial),4)});
             X_asp_ratio = Xs2/Xs1;
@@ -117,8 +117,8 @@ for stage=1:3
             X_neww = X_asp_ratio*X_newh;
             X_theRect = [0 0 X_neww X_newh];
             %Position it in X center and 4/6th way from top.
-            X1_dst_rect = CenterRectOnPointd(X_theRect,screenXpixels/4,4*screenYpixels/6);
-            X2_dst_rect = CenterRectOnPointd(X_theRect,3*screenXpixels/4,4*screenYpixels/6);
+            X1_dst_rect = CenterRectOnPointd(X_theRect,screenXpixels/4,0.5*screenYpixels);
+            X2_dst_rect = CenterRectOnPointd(X_theRect,3*screenXpixels/4,0.5*screenYpixels);
             
             %Draw the face
             imageTexture = Screen('MakeTexture',window,faces{all_combo(displayperm(trial),1),all_combo(displayperm(trial),2)});
@@ -134,9 +134,9 @@ for stage=1:3
             Screen('TextSize', window, 40);
             Screen('TextFont', window, 'Times');
             DrawFormattedText(window, 'Which fish does this person have?', 'center',...
-                screenYpixels * 0.75, [0 0 0]);
+                screenYpixels * 0.65, [0 0 0]);
             DrawFormattedText(window, 'Use “Left” or “Right” key to choose. Press escape to exit', 'center',...
-                screenYpixels * 0.85, [0 0 0]);
+                screenYpixels * 0.75, [0 0 0]);
             
             % Flip to the screen. This command basically draws all of our previous
             % commands onto the screen. See later demos in the animation section on more
@@ -156,26 +156,27 @@ for stage=1:3
                     leftarrow = KbName('LeftArrow');
                     escape = KbName('ESCAPE');
                     if keycode(rightarrow) || keycode(leftarrow)
-                        if all_combo(displayperm(trial),7) == 1
-                            Screen('FrameOval',window,[0,1,0],GrowRect(X1_dst_rect,15,15),3,3);
-                        elseif all_combo(displayperm(trial),7) == 2
-                            Screen('FrameOval',window,[0,1,0],GrowRect(X2_dst_rect,15,15),3,3);
-                        end
+                        %Detect if correct answer
                         if (keycode(leftarrow) && all_combo(displayperm(trial),7) == 1) || (keycode(rightarrow) && all_combo(displayperm(trial),7) == 2)
+                            display_color = [0 1 0];
                             DrawFormattedText(window, 'Correct', 'center',...
-                                screenYpixels * 0.65, [0 1 0]);
+                                screenYpixels * 0.85, display_color);
                             continuous_correct = continuous_correct+1;
                         else
+                            display_color = [1 0 0];
                             DrawFormattedText(window, 'Incorrect', 'center',...
-                                screenYpixels * 0.65, [1 0 0]);
+                                screenYpixels * 0.85, display_color);
                             continuous_correct = 0;
                         end
                         
                         correct_ans = [correct_ans all_combo(displayperm(trial),7)];
+                        %Draw circles and record moves
                         if keycode(leftarrow)
                             moves = [moves 1];
+                            Screen('FrameOval',window,display_color,GrowRect(X1_dst_rect,15,15),3,3);
                         else
                             moves = [moves 2];
+                            Screen('FrameOval',window,display_color,GrowRect(X2_dst_rect,15,15),3,3);
                         end
                         Screen('Flip', window);
                         WaitSecs(1);
@@ -187,19 +188,23 @@ for stage=1:3
                     end
                 end
             else    %Replay stuff
-                if loaded_values.correct_ans(move_index) == 1
-                    Screen('FrameOval',window,[0,1,0],GrowRect(X1_dst_rect,15,15),3,3);
-                elseif loaded_values.correct_ans(move_index) == 2
-                    Screen('FrameOval',window,[0,1,0],GrowRect(X2_dst_rect,15,15),3,3);
-                end
+                %Detect if correct answer
                 if loaded_values.correct_ans(move_index) == loaded_values.moves(move_index)
-                    continuous_correct = continuous_correct+1;
+                    display_color = [0 1 0];
                     DrawFormattedText(window, 'Correct', 'center',...
-                        screenYpixels * 0.65, [0 1 0]);
+                        screenYpixels * 0.85, display_color);
+                    continuous_correct = continuous_correct+1;
                 else
+                    display_color = [1 0 0];
                     DrawFormattedText(window, 'Incorrect', 'center',...
-                        screenYpixels * 0.65, [1 0 0]);
+                        screenYpixels * 0.85, display_color);
                     continuous_correct = 0;
+                end
+                %Draw appropriate circle
+                if loaded_values.moves(move_index)==1
+                    Screen('FrameOval',window,display_color,GrowRect(X1_dst_rect,15,15),3,3);
+                else
+                    Screen('FrameOval',window,display_color,GrowRect(X2_dst_rect,15,15),3,3);
                 end
                 move_index = move_index+1;
                 Screen('Flip', window);
