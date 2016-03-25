@@ -60,10 +60,15 @@ fish = cell(2);
 %Permute to generate a mapping and load the images
 facepermutations = randperm(4);
 fishpermutations = randperm(4);
+
+%For faces along column is associated faces
 faces{1,1} = imread([image_dir 'Face' num2str(facepermutations(1)) '.png']);
 faces{1,2} = imread([image_dir 'Face' num2str(facepermutations(2)) '.png']);
 faces{2,1} = imread([image_dir 'Face' num2str(facepermutations(3)) '.png']);
 faces{2,2} = imread([image_dir 'Face' num2str(facepermutations(4)) '.png']);
+
+%For fishes first row are the initial 2 fishes and next row are the fishes
+%that come next
 fish{1,1} = imread([image_dir 'Fish' num2str(fishpermutations(1)) '.png']);
 fish{1,2} = imread([image_dir 'Fish' num2str(fishpermutations(2)) '.png']);
 fish{2,1} = imread([image_dir 'Fish' num2str(fishpermutations(3)) '.png']);
