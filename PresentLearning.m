@@ -1,4 +1,8 @@
-function PresentLearning(fid,social)
+function PresentLearning(fid,fid2,social)
+% fid - first file name where data is stored for non-social leraning/ read
+% from for social learning.
+% fid2 - second file name where data will be stored for stages 4 and above
+% scoial - true/false to indicate if social learning
 % Clear the workspace and the screen
 sca;
 close all;
@@ -66,40 +70,83 @@ fish{2,1} = imread([image_dir 'Fish' num2str(fishpermutations(3)) '.png']);
 fish{2,2} = imread([image_dir 'Fish' num2str(fishpermutations(4)) '.png']);
 
 %Setup parameters for experiment
-numblocks = 8;
-continuous_correct_expected = [8 8 12];
-numtrials = [4 8 12];
-numfaces = [2 4 4];
-numfishes = [2 2 4];
-%Create face,fish indice for easy cell access
+numblocks = [8 8 8 1]; %TODO: For stage 4, 1 block/16 blocks?
+
+
+continuous_correct_expected = [8 8 12 16]; %TODO: Not clear for stage 4, clarify.
+numtrials = [4 8 12 16];
+numfaces = [2 4 4 4];
+numfishes = [2 2 4 4];
+%Create face,fish indice for easy cell access, each row in the indices
+%correspond to a face/fish
 [p,q] = meshgrid(1:size(faces,1),1:size(faces,2));
 faceindices = [p(:) q(:)];
 [p,q] = meshgrid(1:size(fish,1),1:size(fish,2));
 fishindices = [p(:) q(:)];
 
 %Input recording/display variables
-moves = [];
-correct_ans = [];
-input_timing = [];
-if social==true
+if social ~= true
+    first_recorder = outholder;
+    curr_recorder = first_recorder;
+else
+    curr_recorder = loaded.first_recorder;
     move_index = 1;
 end
+second_recorder = outholder;
 
-for stage=1:3
+%Display/hide feedback
+feedback = true;
+
+% Stage 1 to 4
+for stage=1:4
     %Generate all possible combinations then permute for the order.
+    % first 2 colums contain face indices, next two contain left fish, next
+    % two the right fish, last column contains the correct fish detail.
     all_combo = [faceindices(1:numfaces(stage),:) , repmat(fishindices(1:2,:),numfaces(stage)/2,1), repmat(flipud(fishindices(1:2,:)),numfaces(stage)/2,1), ones(numfaces(stage),1);
                  faceindices(1:numfaces(stage),:) , repmat(flipud(fishindices(1:2,:)),numfaces(stage)/2,1), repmat(fishindices(1:2,:),numfaces(stage)/2,1), 2*ones(numfaces(stage),1)
                 ];
-    if stage == 3
+    if stage >= 3
         all_combo = [all_combo;
                      faceindices(1:2,:) , fishindices(3:4,:), flipud(fishindices(3:4,:)), ones(2,1);
                      faceindices(1:2,:) , flipud(fishindices(3:4,:)), fishindices(3:4,:), 2*ones(2,1)
                     ];
     end
+    
+    if stage>=4
+        all_combo=[all_combo;
+            faceindices(3:4,:) , fishindices(3:4,:), flipud(fishindices(3:4,:)), ones(2,1);
+            faceindices(3:4,:) , flipud(fishindices(3:4,:)), fishindices(3:4,:), 2*ones(2,1)
+        ];
+        % Set social false from now as we want them to also learn normally
+        social = false;
+        % No feedback from now on
+        feedback = false;
+        % Start recording separately from stage 4 as no feedback so only
+        % for analytical reasons. This'll be recorded even for social so
+        % separate.
+        curr_recorder = second_recorder;
+        
+        %For 4th stage display some instructions
+        if stage == 4
+            instr_text = ['Good! In this part of the experiment you will need to remember what you have learned so far.',...
+                '\nYou will NOT be shown the correct answers. At the end of the experiment, the computer will tell you how many you got right.',...
+                '\nGood Luck!',...
+                '\n\n Press any button to continue'];
+            Screen('TextSize', window, 25);
+            Screen('TextFont', window, 'Times');
+            DrawFormattedText(window, instr_text,'center', 'center', black);
+            Screen('Flip', window);
+            KbStrokeWait;
+        end
+    end
+    
+    
     displayperm = randperm(size(all_combo,1));
     %Variable to track continuous correct answers for premature exit
     continuous_correct = 0;
-    for blocks=1:numblocks
+    
+    %Begin process to each trial 
+    for blocks=1:numblocks(stage)
         for trial=1:numtrials(stage)
             %Debug print
             disp(['In trial ' num2str(trial) ' block ' num2str(blocks) ' stage' num2str(stage)]);
@@ -161,28 +208,36 @@ for stage=1:3
                     if keycode(rightarrow) || keycode(leftarrow)
                         %Capture time
                         endsec = GetSecs;
-                        input_timing = [input_timing (endsec-initsec)];
+                        curr_recorder.input_timing = [curr_recorder.input_timing (endsec-initsec)];
                         %Detect if correct answer
                         if (keycode(leftarrow) && all_combo(displayperm(trial),7) == 1) || (keycode(rightarrow) && all_combo(displayperm(trial),7) == 2)
-                            display_color = [0 1 0];
-                            DrawFormattedText(window, 'Correct', 'center',...
-                                screenYpixels * 0.85, display_color);
+                            if feedback==true
+                                display_color = [0 1 0];
+                                DrawFormattedText(window, 'Correct', 'center',...
+                                    screenYpixels * 0.85, display_color);
+                            end
                             continuous_correct = continuous_correct+1;
                         else
-                            display_color = [1 0 0];
-                            DrawFormattedText(window, 'Incorrect', 'center',...
-                                screenYpixels * 0.85, display_color);
+                            if feedback==true
+                                display_color = [1 0 0];
+                                DrawFormattedText(window, 'Incorrect', 'center',...
+                                    screenYpixels * 0.85, display_color);
+                            end
                             continuous_correct = 0;
                         end
                         
-                        correct_ans = [correct_ans all_combo(displayperm(trial),7)];
+                        curr_recorder.correct_ans = [curr_recorder.correct_ans all_combo(displayperm(trial),7)];
                         %Draw circles and record moves
                         if keycode(leftarrow)
-                            moves = [moves 1];
-                            Screen('FrameOval',window,display_color,GrowRect(X1_dst_rect,15,15),3,3);
+                            curr_recorder.moves = [curr_recorder.moves 1];
+                            if feedback == true
+                                Screen('FrameOval',window,display_color,GrowRect(X1_dst_rect,15,15),3,3);
+                            end
                         else
-                            moves = [moves 2];
-                            Screen('FrameOval',window,display_color,GrowRect(X2_dst_rect,15,15),3,3);
+                            curr_recorder.moves = [curr_recorder.moves 2];
+                            if feedback == true
+                                Screen('FrameOval',window,display_color,GrowRect(X2_dst_rect,15,15),3,3);
+                            end
                         end
                         Screen('Flip', window);
                         WaitSecs(1);
@@ -195,7 +250,7 @@ for stage=1:3
                 end
             else    %Replay stuff
                 %Detect if correct answer
-                if loaded_values.correct_ans(move_index) == loaded_values.moves(move_index)
+                if curr_recorder.correct_ans(move_index) == curr_recorder.moves(move_index)
                     display_color = [0 1 0];
                     DrawFormattedText(window, 'Correct', 'center',...
                         screenYpixels * 0.85, display_color);
@@ -207,13 +262,13 @@ for stage=1:3
                     continuous_correct = 0;
                 end
                 %Draw appropriate circle
-                if loaded_values.moves(move_index)==1
+                if curr_recorder.moves(move_index)==1
                     Screen('FrameOval',window,display_color,GrowRect(X1_dst_rect,15,15),3,3);
                 else
                     Screen('FrameOval',window,display_color,GrowRect(X2_dst_rect,15,15),3,3);
                 end
                 %Wait as long as input user did before display.
-                WaitSecs(loaded_values.input_timing(move_index));
+                WaitSecs(curr_recorder.input_timing(move_index));
                 move_index = move_index+1;
                 Screen('Flip', window);
                 %Wait 1 sec before clearing like in non-social input
@@ -231,13 +286,28 @@ for stage=1:3
             break
         end
     end
+    
+    %put in result text for stage 4
+    if stage == 4
+        instr_text = ['You got ',num2str(sum(curr_recorder.moves == curr_recorder.correct_ans)),...
+            '/',num2str(size(curr_recorder.moves,2)), ' correct'];
+        Screen('TextSize', window, 35);
+        Screen('TextFont', window, 'Times');
+        DrawFormattedText(window, instr_text,'center', 'center', black);
+        Screen('Flip', window);
+        WaitSecs(1);
+    end
 end
 % Clear the screen. "sca" is short hand for "Screen CloseAll". This clears
 % all features related to PTB. Note: we leave the variables in the
 % workspace so you can have a look at them if you want.
 % For help see: help sca
 sca;
+% If social learning mode then don't save the first part as it is just a
+% replay
 if social~=true
-    save(fid,'out_rngstate','moves','correct_ans','input_timing');
+    save(fid,'out_rngstate','first_recorder');
 end
+% Save second part for everyone
+save(fid2,'out_rngstate','second_recorder');
 end
