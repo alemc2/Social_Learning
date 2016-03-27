@@ -75,13 +75,13 @@ fish{2,1} = imread([image_dir 'Fish' num2str(fishpermutations(3)) '.png']);
 fish{2,2} = imread([image_dir 'Fish' num2str(fishpermutations(4)) '.png']);
 
 %Setup parameters for experiment
-numblocks = [8 8 8 1]; %TODO: For stage 4, 1 block/16 blocks?
+numblocks = [8 8 8 1 1]; %TODO: For stage 4, 1 block/16 blocks?
 
 
-continuous_correct_expected = [8 8 12 16]; %TODO: Not clear for stage 4, clarify.
-numtrials = [4 8 12 16];
-numfaces = [2 4 4 4];
-numfishes = [2 2 4 4];
+continuous_correct_expected = [8 8 12 16 16]; %TODO: Not clear for stage 4, clarify.
+numtrials = [4 8 12 16 16];
+numfaces = [2 4 4 4 4];
+numfishes = [2 2 4 4 4];
 %Create face,fish indice for easy cell access, each row in the indices
 %correspond to a face/fish
 [p,q] = meshgrid(1:size(faces,1),1:size(faces,2));
@@ -102,8 +102,9 @@ second_recorder = outholder;
 %Display/hide feedback
 feedback = true;
 
-% Stage 1 to 4
-for stage=1:4
+% Stage 1 to 7 which in code terms is upto 5 as actual 5,6 handled in a
+% different function
+for stage=1:5
     %Generate all possible combinations then permute for the order.
     % first 2 colums contain face indices, next two contain left fish, next
     % two the right fish, last column contains the correct fish detail.
@@ -136,6 +137,19 @@ for stage=1:4
             instr_text = ['Good! In this part of the experiment you will need to remember what you have learned so far.',...
                 '\nYou will NOT be shown the correct answers. At the end of the experiment, the computer will tell you how many you got right.',...
                 '\nGood Luck!',...
+                '\n\n Press any button to continue'];
+            Screen('TextSize', window, 25);
+            Screen('TextFont', window, 'Times');
+            DrawFormattedText(window, instr_text,'center', 'center', black);
+            Screen('Flip', window);
+            KbStrokeWait;
+        end
+        
+        %For 7th stage (5th stage in the terms used in code) display some instructions
+        if stage == 5
+            instr_text = ['Good! You have completed the memory test.\n\n',...
+                'In this final part of the experiment you will be tested the last time on what you have learned so far.\n',...
+                'Again, you will NOT be shown the correct answers.\nGood Luck!',...
                 '\n\n Press any button to continue'];
             Screen('TextSize', window, 25);
             Screen('TextFont', window, 'Times');
@@ -232,7 +246,7 @@ for stage=1:4
                         end
                         
                         curr_recorder.correct_ans = [curr_recorder.correct_ans all_combo(displayperm(trial),7)];
-                        %Draw circles and record moves
+                        %Draw circles and record moves - 1 = left, 2 = right
                         if keycode(leftarrow)
                             curr_recorder.moves = [curr_recorder.moves 1];
                             if feedback == true
@@ -301,6 +315,12 @@ for stage=1:4
         DrawFormattedText(window, instr_text,'center', 'center', black);
         Screen('Flip', window);
         WaitSecs(1);
+        
+        %Call function for actual stage 5 (words round)
+        %rng states maybe redundant but better be safe
+        cur_rngstate = rng;
+        [word_recorder,cur_rngstate] = PresentWords(cur_rngstate,window,windowRect,faces);
+        rng(cur_rngstate);
     end
 end
 % Clear the screen. "sca" is short hand for "Screen CloseAll". This clears
@@ -314,5 +334,5 @@ if social~=true
     save(fid,'out_rngstate','first_recorder');
 end
 % Save second part for everyone
-save(fid2,'out_rngstate','second_recorder');
+save(fid2,'out_rngstate','second_recorder','word_recorder');
 end
