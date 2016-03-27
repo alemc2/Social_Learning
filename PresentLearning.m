@@ -1,8 +1,15 @@
-function PresentLearning(fid,fid2,social)
+function PresentLearning(fid,fid2,social,observer_mode)
 % fid - first file name where data is stored for non-social leraning/ read
 % from for social learning.
 % fid2 - second file name where data will be stored for stages 4 and above
-% scoial - true/false to indicate if social learning
+% social - true/false to indicate if social learning
+% observer_mode - true/false to indicate if just observing as experimenter.Defaults to false
+
+% Set default observer_mode to false if unavailable
+if nargin<4
+    observer_mode = false;
+end
+
 % Clear the workspace and the screen
 sca;
 close all;
@@ -11,11 +18,14 @@ close all;
 PsychDefaultSetup(2);
 
 % Seed the random number generator.
-if(social ~= true)
+if(social ~= true && observer_mode ~= true)
     rng('shuffle');
     out_rngstate = rng;
 else
     loaded_values = load(fid);
+    if observer_mode == true
+        loaded_values2 = load(fid2);
+    end
     rng(loaded_values.out_rngstate);
 end
 
@@ -90,14 +100,18 @@ faceindices = [p(:) q(:)];
 fishindices = [p(:) q(:)];
 
 %Input recording/display variables
-if social ~= true
+if (social ~= true && observer_mode ~= true)
     first_recorder = outholder;
     curr_recorder = first_recorder;
 else
-    curr_recorder = loaded.first_recorder;
+    curr_recorder = loaded_values.first_recorder;
     move_index = 1;
 end
-second_recorder = outholder;
+if observer_mode == true
+    second_recorder = loaded_values2.second_recorder;
+else
+    second_recorder = outholder;
+end
 
 %Display/hide feedback
 feedback = true;
@@ -131,6 +145,12 @@ for stage=1:5
         % for analytical reasons. This'll be recorded even for social so
         % separate.
         curr_recorder = second_recorder;
+        
+        %If in observer mode we want to reset move_index at this point as
+        %we start reading a new file
+        if observer_mode == true
+            move_index = 1;
+        end
         
         %For 4th stage display some instructions
         if stage == 4
@@ -217,7 +237,7 @@ for stage=1:5
             % key) to terminate the demo. For help see: help KbStrokeWait
             %For now putting while loop but needs to be done as multiple
             %inputs.. Or maybe not to avoid unwanted inputs
-            if(social~=true)    %Take input and give feedback
+            if(social~=true && observer_mode~= true)    %Take input and give feedback
                 initsec = GetSecs;
                 while(true)
                     [secs,keycode,deltasec] = KbStrokeWait;
@@ -308,8 +328,10 @@ for stage=1:5
     
     %put in result text for stage 4
     if stage == 4
-        instr_text = ['You got ',num2str(sum(curr_recorder.moves == curr_recorder.correct_ans)),...
-            '/',num2str(size(curr_recorder.moves,2)), ' correct'];
+        % (1:16) added in the next command to help it identify the counts
+        % correctly in observer mode.. Hackish needs to be refined.
+        instr_text = ['You got ',num2str(sum(curr_recorder.moves(1:16) == curr_recorder.correct_ans(1:16))),...
+            '/',num2str(size(curr_recorder.moves(1:16),2)), ' correct'];
         Screen('TextSize', window, 35);
         Screen('TextFont', window, 'Times');
         DrawFormattedText(window, instr_text,'center', 'center', black);
@@ -319,7 +341,11 @@ for stage=1:5
         %Call function for actual stage 5 (words round)
         %rng states maybe redundant but better be safe
         cur_rngstate = rng;
-        [word_recorder,cur_rngstate] = PresentWords(cur_rngstate,window,windowRect,faces);
+        if observer_mode == true
+            [word_recorder,cur_rngstate] = PresentWords(cur_rngstate,window,windowRect,faces,observer_mode,loaded_values2.word_recorder);
+        else
+            [word_recorder,cur_rngstate] = PresentWords(cur_rngstate,window,windowRect,faces);
+        end
         rng(cur_rngstate);
     end
 end
@@ -330,9 +356,12 @@ end
 sca;
 % If social learning mode then don't save the first part as it is just a
 % replay
-if social~=true
-    save(fid,'out_rngstate','first_recorder');
+% If observer mode then don't save anything, it is purely observation
+if observer_mode ~= true
+    if social~=true
+        save(fid,'out_rngstate','first_recorder');
+    end
+    % Save second part for everyone
+    save(fid2,'out_rngstate','second_recorder','word_recorder');
 end
-% Save second part for everyone
-save(fid2,'out_rngstate','second_recorder','word_recorder');
 end

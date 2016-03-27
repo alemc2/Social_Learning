@@ -1,4 +1,21 @@
-function [out_recorder,out_rngstate] = PresentWords(randstate,window,windowRect,faces)
+function [out_recorder,out_rngstate] = PresentWords(randstate,window,windowRect,faces,observer_mode,recorder)
+% randstate - state of rng to set to. Useful for reproduction.
+% window - Psychtoolbox window handle
+% windowRect - PTB rectangle enclosing the window
+% faces - cell matrix containing faces to display
+% observer_mode - true/false to indicate if just observing as experimenter.Defaults to false
+% recorder - If observer_mode is true then we expect the recorder
+
+if nargin<5
+    observer_mode = false;
+elseif nargin==5 && observer_mode==true
+    error('We expect a recorder to be passed in observer mode');
+end
+
+if observer_mode == true
+    move_index = 1;
+end
+
 rng(randstate);
 
 out_recorder = outholder;
@@ -168,34 +185,66 @@ for trial=1:disp_num
     % rects at once.
     % For help see: Screen Flip?
     Screen('Flip', window,0,1);
-    %accept input and get time
-    initsec = GetSecs;
-    while(true)
-        [secs,keycode,deltasec] = KbStrokeWait;
-        yes = KbName('Y');
-        no = KbName('N');
-        escape = KbName('ESCAPE');
-        if keycode(yes) || keycode(no)
-            %Capture time
-            endsec = GetSecs;
-            out_recorder.input_timing = [out_recorder.input_timing (endsec-initsec)];
-            
-            %Record correct answer
-            out_recorder.correct_ans = [out_recorder.correct_ans disp_matrix(trial,4)];
-            %Record moves - 1 = yes, 2 = no
-            if keycode(yes)
-                out_recorder.moves = [out_recorder.moves 1];
-            else
-                out_recorder.moves = [out_recorder.moves 2];
+    
+    if observer_mode ~= true
+        %accept input and get time
+        initsec = GetSecs;
+        while(true)
+            [secs,keycode,deltasec] = KbStrokeWait;
+            yes = KbName('Y');
+            no = KbName('N');
+            escape = KbName('ESCAPE');
+            if keycode(yes) || keycode(no)
+                %Capture time
+                endsec = GetSecs;
+                out_recorder.input_timing = [out_recorder.input_timing (endsec-initsec)];
+                
+                %Record correct answer
+                out_recorder.correct_ans = [out_recorder.correct_ans disp_matrix(trial,4)];
+                %Record moves - 1 = yes, 2 = no
+                if keycode(yes)
+                    out_recorder.moves = [out_recorder.moves 1];
+                else
+                    out_recorder.moves = [out_recorder.moves 2];
+                end
+                Screen('Flip', window);
+                WaitSecs(1);
+                break
+            elseif keycode(escape)
+                disp('Exit by escape')
+                sca;
+                return
             end
-            Screen('Flip', window);
-            WaitSecs(1);
-            break
-        elseif keycode(escape)
-            disp('Exit by escape')
-            sca;
-            return
         end
+    else    %Replay stuff
+        X_theRect = [0 0 100 50];
+        %Position it in X center and 4/6th way from top.
+        X1_dst_rect = CenterRectOnPointd(X_theRect,0.32*screenXpixels,0.77*screenYpixels);
+        X2_dst_rect = CenterRectOnPointd(X_theRect,0.72*screenXpixels,0.77*screenYpixels);
+        
+        
+        %Detect if correct answer
+        if recorder.correct_ans(move_index) == recorder.moves(move_index)
+            display_color = [0 1 0];
+            DrawFormattedText(window, 'Correct', 'center',...
+                screenYpixels * 0.85, display_color);
+        else
+            display_color = [1 0 0];
+            DrawFormattedText(window, 'Incorrect', 'center',...
+                screenYpixels * 0.85, display_color);
+        end
+        %Draw appropriate circle
+        if recorder.moves(move_index)==1
+            Screen('FrameRect',window,display_color,X1_dst_rect,3);
+        else
+            Screen('FrameRect',window,display_color,X2_dst_rect,3);
+        end
+        %Wait as long as input user did before display.
+        WaitSecs(recorder.input_timing(move_index));
+        move_index = move_index+1;
+        Screen('Flip', window);
+        %Wait 1 sec before clearing like in non-social input
+        WaitSecs(1);
     end
     %Clear screen and display blank for 1 sec
     Screen('Flip', window);
