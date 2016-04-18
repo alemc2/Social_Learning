@@ -120,6 +120,9 @@ for word_num=1:num_associations
     Screen('Flip', window);
     %Wait 5 sec before clearing and displaying next word
     WaitSecs(5);
+    %Clear screen and display blank for 500 msec
+    Screen('Flip', window);
+    WaitSecs(0.5);
 end
 
 %stage 6 instructions
