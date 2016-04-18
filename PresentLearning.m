@@ -266,17 +266,18 @@ for stage=1:5
                         end
                         
                         curr_recorder.correct_ans = [curr_recorder.correct_ans all_combo(displayperm(trial),7)];
+                        % If in any phase we don't want feedback, we will
+                        % still circle their choice but show it in grey
+                        if feedback == false
+                            display_color = [0.6,0.6,0.6];
+                        end
                         %Draw circles and record moves - 1 = left, 2 = right
                         if keycode(leftarrow)
                             curr_recorder.moves = [curr_recorder.moves 1];
-                            if feedback == true
-                                Screen('FrameOval',window,display_color,GrowRect(X1_dst_rect,15,15),3,3);
-                            end
+                            Screen('FrameOval',window,display_color,GrowRect(X1_dst_rect,15,15),3,3);
                         else
                             curr_recorder.moves = [curr_recorder.moves 2];
-                            if feedback == true
-                                Screen('FrameOval',window,display_color,GrowRect(X2_dst_rect,15,15),3,3);
-                            end
+                            Screen('FrameOval',window,display_color,GrowRect(X2_dst_rect,15,15),3,3);
                         end
                         Screen('Flip', window);
                         WaitSecs(1);
