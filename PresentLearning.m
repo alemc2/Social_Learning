@@ -57,6 +57,9 @@ black = BlackIndex(screenNumber);
 % For help see: help RectCenter
 [xCenter, yCenter] = RectCenter(windowRect);
 
+% Instruction rect is 70% at center
+Instr_dst_rect = CenterRectOnPointd([0,0,0.7*screenXpixels,0.7*screenYpixels],xCenter,yCenter);
+
 % Enable alpha blending for anti-aliasing
 % For help see: Screen BlendFunction?
 % Also see: Chapter 6 of the OpenGL programming guide
@@ -160,7 +163,7 @@ for stage=1:5
                 '\n\n Press any button to continue'];
             Screen('TextSize', window, 25);
             Screen('TextFont', window, 'Times');
-            DrawFormattedText(window, instr_text,'center', 'center', black);
+            DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], [], [], Instr_dst_rect);
             Screen('Flip', window);
             KbStrokeWait;
         end
@@ -173,7 +176,7 @@ for stage=1:5
                 '\n\n Press any button to continue'];
             Screen('TextSize', window, 25);
             Screen('TextFont', window, 'Times');
-            DrawFormattedText(window, instr_text,'center', 'center', black);
+            DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], [], [], Instr_dst_rect);
             Screen('Flip', window);
             KbStrokeWait;
         end
