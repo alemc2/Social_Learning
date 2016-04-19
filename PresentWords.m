@@ -227,10 +227,10 @@ for trial=1:disp_num
                 Screen('Flip', window);
                 WaitSecs(1);
                 break
-            elseif keycode(escape)
-                disp('Exit by escape')
-                sca;
-                return
+%             elseif keycode(escape)
+%                 disp('Exit by escape')
+%                 sca;
+%                 return
             end
         end
     else    %Replay stuff

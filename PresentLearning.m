@@ -225,7 +225,7 @@ for stage=1:5
             Screen('TextFont', window, 'Times');
             DrawFormattedText(window, 'Which fish does this person have?', 'center',...
                 screenYpixels * 0.65, [0 0 0]);
-            DrawFormattedText(window, 'Use “Left” or “Right” key to choose. Press escape to exit', 'center',...
+            DrawFormattedText(window, 'Use “Left” or “Right” key to choose.', 'center',...
                 screenYpixels * 0.75, [0 0 0]);
             
             % Flip to the screen. This command basically draws all of our previous
@@ -285,10 +285,10 @@ for stage=1:5
                         Screen('Flip', window);
                         WaitSecs(1);
                         break
-                    elseif keycode(escape)
-                        disp('Exit by escape')
-                        sca;
-                        return
+%                     elseif keycode(escape)
+%                         disp('Exit by escape')
+%                         sca;
+%                         return
                     end
                 end
             else    %Replay stuff
