@@ -150,7 +150,7 @@ rand_critical = randperm(num_critical,4);
 rand_control = randperm(num_control,4);
 %Put all these random selections into a display matrix, also store what the
 %correct answer is 1 = Yes, 2 = No. Correct answer is stored in 4th column
-%commenting out to try mypart
+%commenting out to try adding in new test phase
 
 %disp_matrix = [ associations(rand_associations,:), ones(8,1); critical_lures(rand_critical,:), 2*ones(4,1); control_lures(rand_control,:), 2*ones(4,1)];
 %disp_num = size(disp_matrix,1);
@@ -172,14 +172,17 @@ E = Shuffle(D);
 
 %Fill in the matrix with 8 rows from A, 4 from B, and 4 from C
 for row = 1:size(disp_matrix,1) 
-    if E(row)<9;
+    if E(row)<9
         disp_matrix(row,:)=A(row,:);
         disp('A');
-    elseif E(row)<13;
+    elseif E(row)<13
         disp_matrix(row,:)=B(row,:);
         disp('B');
     else
         disp_matrix(row,:)=C(row,:);
+        if rand(1)>.5
+            disp_matrix(row,1)=mod(disp_matrix(row,1),2)+1;
+        end
         disp('C');
     end    
 end
