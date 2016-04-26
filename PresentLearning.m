@@ -132,9 +132,9 @@ if social ~= true
         'receive feedback. Your goal is to use what you learned during the first section to perform as well ',...
         'as you can during this testing phase.',...
         '\n\n\n Press any button to continue.'];
-    Screen('TextSize', window, 25);
+    Screen('TextSize', window, 24);
     Screen('TextFont', window, 'Times');
-    DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], 1.3, [], Instr_dst_rect);
+    DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], 1.5, [], Instr_dst_rect);
     Screen('Flip', window);
     WaitSecs(.5);
     KbStrokeWait;
@@ -146,10 +146,10 @@ if social ~= true
         '\n\nAfter you make your decision by pressing the corresponding key, your selection will be circled ',...
         'on the screen and you will receive a message that will say whether your selection was correct or incorrect. ',...
         '\n\n Your goal is to learn which kinds of fish each person has. You will be tested on what you learn in part 2 of this study.',...
-        '\n\n\n Press the space bar to continue.']
-    Screen('TextSize', window, 25);
+        '\n\n\n Press the space bar to continue.'];
+    Screen('TextSize', window, 24);
     Screen('TextFont', window, 'Times');
-    DrawFormattedText(window, instr_texttwo,'wrapat', 'center', black, 70, [], [], 1.3, [], Instr_dst_rect);
+    DrawFormattedText(window, instr_texttwo,'wrapat', 'center', black, 70, [], [], 1.5, [], Instr_dst_rect);
     Screen('Flip', window);
     WaitSecs(.5);
     KbStrokeWait;
@@ -166,9 +166,9 @@ else
          'make decisions yourself and will not receive feedback. Your goal is to use what you learned ',...
          'from observing the other participant during the first section to perform as well as you can during this testing phase.',...
          '\n\n\n Press any button to continue.'];
-    Screen('TextSize', window, 25);
+    Screen('TextSize', window, 24);
     Screen('TextFont', window, 'Times');
-    DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], 1.3, [], Instr_dst_rect);
+    DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], 1.5, [], Instr_dst_rect);
     Screen('Flip', window);
     WaitSecs(.5);
     KbStrokeWait;
@@ -183,9 +183,9 @@ else
         '\n\nYour goal is to learn which kinds of fish each person has by watching this participant. You ',...
         'will be tested on what you learn in part 2 of this study.',...
         '\n\n\n Press the space bar to continue.']
-    Screen('TextSize', window, 25);
+    Screen('TextSize', window, 24);
     Screen('TextFont', window, 'Times');
-    DrawFormattedText(window, instr_texttwo,'wrapat', 'center', black, 70, [], [], 1.3, [], Instr_dst_rect);
+    DrawFormattedText(window, instr_texttwo,'wrapat', 'center', black, 70, [], [], 1.5, [], Instr_dst_rect);
     Screen('Flip', window);
     WaitSecs(.5);
     KbStrokeWait;
@@ -236,9 +236,9 @@ for stage=1:5
                     'will need to remember what you have learned so far. You will NOT be shown the correct ',...
                     'answers. At the end of the experiment, the computer will tell you how many you got right. Good Luck!',...
                     '\n\n Press any button to continue'];
-                Screen('TextSize', window, 25);
+                Screen('TextSize', window, 24);
                 Screen('TextFont', window, 'Times');
-                DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], 1.3, [], Instr_dst_rect);
+                DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], 1.5, [], Instr_dst_rect);
                 Screen('Flip', window);
                 KbStrokeWait;
             else 
@@ -248,9 +248,9 @@ for stage=1:5
                     'NOT be shown the correct answers. At the end of the experiment, the computer will tell you how ',...
                     'many you got right. Good Luck!',...
                     '\n\n Press any button to continue'];
-                Screen('TextSize', window, 25);
+                Screen('TextSize', window, 24);
                 Screen('TextFont', window, 'Times');
-                DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], 1.3, [], Instr_dst_rect);
+                DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], 1.5, [], Instr_dst_rect);
                 Screen('Flip', window);
                 KbStrokeWait;  
             end
@@ -262,9 +262,9 @@ for stage=1:5
                 'In this final part of the experiment you will be tested the last time on what you have learned.',...
                 'Again, you will NOT be shown the correct answers.Good Luck!',...
                 '\n\n Press any button to continue'];
-            Screen('TextSize', window, 25);
+            Screen('TextSize', window, 24);
             Screen('TextFont', window, 'Times');
-            DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], 1.3, [], Instr_dst_rect);
+            DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], 1.5, [], Instr_dst_rect);
             Screen('Flip', window);
             KbStrokeWait;
         end
@@ -445,6 +445,20 @@ end
 % all features related to PTB. Note: we leave the variables in the
 % workspace so you can have a look at them if you want.
 % For help see: help sca
+
+% end text
+    end_text = ['You have completed the learning portion of the study. ',...
+        'Next we have some simple debriefing questions for you to answer.',...
+        '\n\nPlease let the experimenter know that you are done with this first section ',...
+        'so that they can get you started on the final few questions.'];
+    Screen('TextSize', window, 24);
+    Screen('TextFont', window, 'Times');
+    DrawFormattedText(window, end_text,'wrapat', 'center', black, 70, [], [], 1.5, [], Instr_dst_rect);
+    Screen('Flip', window);
+    WaitSecs(.5);
+    KbStrokeWait;
+
+
 sca;
 % If social learning mode then don't save the first part as it is just a
 % replay
@@ -454,6 +468,6 @@ if observer_mode ~= true
         save(fid,'out_rngstate','first_recorder');
     end
     % Save second part for everyone
-    save(fid2,'out_rngstate','second_recorder','word_recorder');
+    save(fid2,'second_recorder','word_recorder');
 end
 end
