@@ -29,6 +29,12 @@ else
     rng(loaded_values.out_rngstate);
 end
 
+if social == true
+    socialOG = 1;
+else
+    socialOG = 0;
+end
+    
 % Get the screen numbers. This gives us a number for each of the screens
 % attached to our computer. For help see: Screen Screens?
 screens = Screen('Screens');
@@ -182,7 +188,7 @@ else
         'and you will see a message they received that says whether their selection was correct or incorrect. ',...
         '\n\nYour goal is to learn which kinds of fish each person has by watching this participant. You ',...
         'will be tested on what you learn in part 2 of this study.',...
-        '\n\n\n Press the space bar to continue.']
+        '\n\n\n Press the space bar to continue.'];
     Screen('TextSize', window, 24);
     Screen('TextFont', window, 'Times');
     DrawFormattedText(window, instr_texttwo,'wrapat', 'center', black, 70, [], [], 1.5, [], Instr_dst_rect);
@@ -215,6 +221,13 @@ for stage=1:5
         ];
         % Set social false from now as we want them to also learn normally
         social = false;
+        %if social == true
+            %social = false;
+            %oldsocial = true;
+            %display(social)
+            %display(oldsocial)
+        %else oldsocial = social
+        %end
         % No feedback from now on
         feedback = false;
         % Start recording separately from stage 4 as no feedback so only
@@ -230,7 +243,7 @@ for stage=1:5
         
         %For 4th stage display some instructions
         if stage == 4
-            if social ~= true
+            if socialOG ~= 1
                 instr_text = ['Part 2\n\n\n',...
                     'Good! Now you will move onto the test part of the experiment. In this part of the experiment you ',...
                     'will need to remember what you have learned so far. You will NOT be shown the correct ',...
@@ -259,8 +272,8 @@ for stage=1:5
         %For 7th stage (5th stage in the terms used in code) display some instructions
         if stage == 5
             instr_text = ['Good! You have completed the memory test.\n\n',...
-                'In this final part of the experiment you will be tested the last time on what you have learned.',...
-                'Again, you will NOT be shown the correct answers.Good Luck!',...
+                'In this final part of the experiment you will be tested the last time on what you have learned. ',...
+                'Again, you will NOT be shown the correct answers. Good Luck!',...
                 '\n\n Press any button to continue'];
             Screen('TextSize', window, 24);
             Screen('TextFont', window, 'Times');
@@ -441,10 +454,6 @@ for stage=1:5
         rng(cur_rngstate);
     end
 end
-% Clear the screen. "sca" is short hand for "Screen CloseAll". This clears
-% all features related to PTB. Note: we leave the variables in the
-% workspace so you can have a look at them if you want.
-% For help see: help sca
 
 % end text
     end_text = ['You have completed the learning portion of the study. ',...
@@ -457,17 +466,21 @@ end
     Screen('Flip', window);
     WaitSecs(.5);
     KbStrokeWait;
+    
+    sca;
+% Clear the screen. "sca" is short hand for "Screen CloseAll". This clears
+% all features related to PTB. Note: we leave the variables in the
+% workspace so you can have a look at them if you want.
+% For help see: help sca
 
-
-sca;
 % If social learning mode then don't save the first part as it is just a
 % replay
 % If observer mode then don't save anything, it is purely observation
 if observer_mode ~= true
-    if social~=true
+    if socialOG == 0
         save(fid,'out_rngstate','first_recorder');
     end
     % Save second part for everyone
     save(fid2,'second_recorder','word_recorder');
-end
+end  
 end

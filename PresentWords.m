@@ -234,8 +234,8 @@ for trial=1:dispmatrix_num
     %Get positions of Yes/No text to draw outline around chosen value
     X_theRect = [0 0 100 50];
     %Position it in X center and 4/6th way from top.
-    X1_dst_rect = CenterRectOnPointd(X_theRect,0.32*screenXpixels,0.77*screenYpixels);
-    X2_dst_rect = CenterRectOnPointd(X_theRect,0.72*screenXpixels,0.77*screenYpixels);
+    X1_dst_rect = CenterRectOnPointd(X_theRect,0.33*screenXpixels,0.78*screenYpixels);
+    X2_dst_rect = CenterRectOnPointd(X_theRect,0.72*screenXpixels,0.78*screenYpixels);
     
     if observer_mode ~= true
         %accept input and get time
