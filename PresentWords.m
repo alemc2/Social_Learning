@@ -78,17 +78,18 @@ control_lures(:,2) = mod(control_lures(:,2),2)+1;
 num_control = size(control_lures,1);
 
 %stage 5 instructions
-instr_text = ['Good! The next section of the study is about memory.',... 
-    'It is divided into two sections, a study section and a test section.\n',...
-    'In the study section, you will see several words presented one at a time on different screens.\n',...
-    'Following this, you will proceed to the test section, where you will be tested on your ',...
+instr_text = ['Good! The next section of the study is about memory.\n',... 
+    'It is divided into two sections, a study section and a test section ',...
+    'In the study section, you will see several words presented one at a time on different screens. ',...
+    'Each word will be displayed for 2 seconds, after which the screen will automatically advance. ',...
+    'After you see all of the words, you will proceed to the test section, where you will be tested on your ',...
     'memory for these words.\n\n',...
     'You may now continue onto the study section. Study the words presented on the following screens ',...
     'for the upcoming memory test!',...
     '\n\n Press any button to continue'];
-Screen('TextSize', window, 25);
+Screen('TextSize', window, 24);
 Screen('TextFont', window, 'Times');
-DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], [], [], Instr_dst_rect);
+DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], 1.5, [], Instr_dst_rect);
 Screen('Flip', window);
 KbStrokeWait;
 
@@ -131,14 +132,14 @@ end
 %stage 6 instructions
 instr_text = ['Good! You just completed the study section.',... 
     'You will now move onto the test section.\n\n',...
-    'In this section, we will test your memory for what you just saw.\n',... 
+    'In this section, we will test your memory for what you just saw. ',... 
     'On each screen answer the question presented based on what you ',...
     'remember from the study section you just completed.\n\n',...
     'In the next sections, press Y for ''yes'' and press N for ''no''.',...
     '\n\n Press any button to continue'];
-Screen('TextSize', window, 25);
+Screen('TextSize', window, 24);
 Screen('TextFont', window, 'Times');
-DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], [], [], Instr_dst_rect);
+DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], 1.5, [], Instr_dst_rect);
 Screen('Flip', window);
 KbStrokeWait;
 
@@ -149,11 +150,49 @@ rand_critical = randperm(num_critical,4);
 rand_control = randperm(num_control,4);
 %Put all these random selections into a display matrix, also store what the
 %correct answer is 1 = Yes, 2 = No. Correct answer is stored in 4th column
-disp_matrix = [ associations(rand_associations,:), ones(8,1); critical_lures(rand_critical,:), 2*ones(4,1); control_lures(rand_control,:), 2*ones(4,1)];
-disp_num = size(disp_matrix,1);
-disp_shuffle = randperm(disp_num);
-disp_matrix = disp_matrix(disp_shuffle,:);
-for trial=1:disp_num
+%commenting out to try adding in new test phase
+
+%disp_matrix = [ associations(rand_associations,:), ones(8,1); critical_lures(rand_critical,:), 2*ones(4,1); control_lures(rand_control,:), 2*ones(4,1)];
+%disp_num = size(disp_matrix,1);
+%disp_shuffle = randperm(disp_num);
+%disp_matrix = disp_matrix(disp_shuffle,:);
+
+%Making a 16X3 matrix to put in all of my values. Disp_matrix equals the 
+%face word pairs matrix for the test
+disp_matrix = zeros(16,4);
+%Just renaming matrices to make referencing easier. Also store what the 
+%correct answer is 1=yes, 2=no. Correct answer is stored in 4th comment
+A=[associations,ones(size(associations,1),1)];
+B=[critical_lures,2*ones(size(critical_lures,1),1)];
+C=[control_lures,2*ones(size(control_lures,1),1)];
+%creating an array that we reference to selectively sample from the A,B,C
+%matrices. We then shuffle it to randomize
+D = [1:size(A,1)];
+E = Shuffle(D);
+
+%Fill in the matrix with 8 rows from A, 4 from B, and 4 from C
+for row = 1:size(disp_matrix,1) 
+    if E(row)<9
+        disp_matrix(row,:)=A(row,:);
+        disp('A');
+    elseif E(row)<13
+        disp_matrix(row,:)=B(row,:);
+        disp('B');
+    else
+        disp_matrix(row,:)=C(row,:);
+        if rand(1)>.5
+            disp_matrix(row,1)=mod(disp_matrix(row,1),2)+1;
+        end
+        disp('C');
+    end    
+end
+
+dispmatrix_num = size(disp_matrix, 1);
+dispmatrix_shuffle = randperm(dispmatrix_num);
+disp_matrix = disp_matrix(dispmatrix_shuffle,:);
+
+
+for trial=1:dispmatrix_num
     %Debug print
     disp(['TEST_STAGE:Showing word ' dictionary{disp_matrix(trial,3)} ' for face ' num2str(disp_matrix(trial,1)) ',' num2str(disp_matrix(trial,2))]);
     %Calculate image sizes and scaling.
@@ -195,8 +234,8 @@ for trial=1:disp_num
     %Get positions of Yes/No text to draw outline around chosen value
     X_theRect = [0 0 100 50];
     %Position it in X center and 4/6th way from top.
-    X1_dst_rect = CenterRectOnPointd(X_theRect,0.32*screenXpixels,0.77*screenYpixels);
-    X2_dst_rect = CenterRectOnPointd(X_theRect,0.72*screenXpixels,0.77*screenYpixels);
+    X1_dst_rect = CenterRectOnPointd(X_theRect,0.33*screenXpixels,0.78*screenYpixels);
+    X2_dst_rect = CenterRectOnPointd(X_theRect,0.72*screenXpixels,0.78*screenYpixels);
     
     if observer_mode ~= true
         %accept input and get time
