@@ -1,4 +1,4 @@
-function [out_recorder,out_rngstate] = PresentWords(randstate,window,windowRect,faces,observer_mode,recorder)
+function [out_recorder,out_rngstate,restruct] = PresentWords(randstate,window,windowRect,faces,observer_mode,recorder,just_record,extra_params)
 % randstate - state of rng to set to. Useful for reproduction.
 % window - Psychtoolbox window handle
 % windowRect - PTB rectangle enclosing the window
@@ -12,6 +12,14 @@ elseif nargin==5 && observer_mode==true
     error('We expect a recorder to be passed in observer mode');
 end
 
+if nargin<7 || observer_mode==false
+    just_record = false;
+end
+
+if nargin<8
+    extra_params = struct('pid','p1','socialOG',0);
+end
+
 if observer_mode == true
     move_index = 1;
 end
@@ -19,33 +27,36 @@ end
 rng(randstate);
 
 out_recorder = outholder;
+restruct = [];
 
-% Get the screen numbers. This gives us a number for each of the screens
-% attached to our computer. For help see: Screen Screens?
-screens = Screen('Screens');
-
-% Draw we select the maximum of these numbers. So in a situation where we
-% have two screens attached to our monitor we will draw to the external
-% screen. When only one screen is attached to the monitor we will draw to
-% this. For help see: help max
-screenNumber = max(screens);
-
-% Define black and white (white will be 1 and black 0). This is because
-% luminace values are (in general) defined between 0 and 1.
-% For help see: help WhiteIndex and help BlackIndex
-white = WhiteIndex(screenNumber);
-black = BlackIndex(screenNumber);
-
-% Get the size of the on screen window in pixels.
-% For help see: Screen WindowSize?
-[screenXpixels, screenYpixels] = Screen('WindowSize', window);
-
-% Get the centre coordinate of the window in pixels
-% For help see: help RectCenter
-[xCenter, yCenter] = RectCenter(windowRect);
-
-% Instruction rect is 70% at center
-Instr_dst_rect = CenterRectOnPointd([0,0,0.7*screenXpixels,0.7*screenYpixels],xCenter,yCenter);
+if just_record ~= true
+    % Get the screen numbers. This gives us a number for each of the screens
+    % attached to our computer. For help see: Screen Screens?
+    screens = Screen('Screens');
+    
+    % Draw we select the maximum of these numbers. So in a situation where we
+    % have two screens attached to our monitor we will draw to the external
+    % screen. When only one screen is attached to the monitor we will draw to
+    % this. For help see: help max
+    screenNumber = max(screens);
+    
+    % Define black and white (white will be 1 and black 0). This is because
+    % luminace values are (in general) defined between 0 and 1.
+    % For help see: help WhiteIndex and help BlackIndex
+    white = WhiteIndex(screenNumber);
+    black = BlackIndex(screenNumber);
+    
+    % Get the size of the on screen window in pixels.
+    % For help see: Screen WindowSize?
+    [screenXpixels, screenYpixels] = Screen('WindowSize', window);
+    
+    % Get the centre coordinate of the window in pixels
+    % For help see: help RectCenter
+    [xCenter, yCenter] = RectCenter(windowRect);
+    
+    % Instruction rect is 70% at center
+    Instr_dst_rect = CenterRectOnPointd([0,0,0.7*screenXpixels,0.7*screenYpixels],xCenter,yCenter);
+end
 
 dictionary = {'pencil', 'farmer', 'curtain', 'house', 'parent', 'garden',...
     'turkey', 'mountain', 'river', 'bell', 'coffee', 'nose', 'hat', 'school',...
@@ -77,71 +88,84 @@ control_lures = [associations; critical_lures];
 control_lures(:,2) = mod(control_lures(:,2),2)+1;
 num_control = size(control_lures,1);
 
-%stage 5 instructions
-instr_text = ['Good! The next section of the study is about memory.\n',... 
-    'It is divided into two sections, a study section and a test section ',...
-    'In the study section, you will see several words presented one at a time on different screens. ',...
-    'Each word will be displayed for 2 seconds, after which the screen will automatically advance. ',...
-    'After you see all of the words, you will proceed to the test section, where you will be tested on your ',...
-    'memory for these words.\n\n',...
-    'You may now continue onto the study section. Study the words presented on the following screens ',...
-    'for the upcoming memory test!',...
-    '\n\n Press any button to continue'];
-Screen('TextSize', window, 24);
-Screen('TextFont', window, 'Times');
-DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], 1.5, [], Instr_dst_rect);
-Screen('Flip', window);
-KbStrokeWait;
+if just_record ~= true
+    %stage 5 instructions
+    instr_text = ['Good! The next section of the study is about memory.\n',...
+        'It is divided into two sections, a study section and a test section ',...
+        'In the study section, you will see several words presented one at a time on different screens. ',...
+        'Each word will be displayed for 2 seconds, after which the screen will automatically advance. ',...
+        'After you see all of the words, you will proceed to the test section, where you will be tested on your ',...
+        'memory for these words.\n\n',...
+        'You may now continue onto the study section. Study the words presented on the following screens ',...
+        'for the upcoming memory test!',...
+        '\n\n Press any button to continue'];
+    Screen('TextSize', window, 24);
+    Screen('TextFont', window, 'Times');
+    DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], 1.5, [], Instr_dst_rect);
+    Screen('Flip', window);
+    KbStrokeWait;
+end
 
 %stage 5
 for word_num=1:num_associations
+    %create struct for the trial
+    trial_struct = struct('ID',extra_params.pid,'Cond',extra_params.socialOG,'Stage',5,'Learning_Trial','','Test_Trial','','Test_Trial_Final','',...
+        'Trial_typefish','','WordL_Trial',word_num,'WordT_Trial','','Trial_typeword','',...
+        'Face',(associations(word_num,1)-1)*2+associations(word_num,2),...
+        'Fish_left','','Fish_right','',...
+        'Word',dictionary{associations(word_num,3)},'Resp','','Ans','','Corr','','RT','');
+    restruct = [restruct;trial_struct];
     %Debug print
     disp(['Showing word ' dictionary{associations(word_num,3)} ' for face ' num2str(associations(word_num,1)) ',' num2str(associations(word_num,2))]);
-    %Calculate image sizes and scaling.
-    [As1,As2,As3] = size(faces{associations(word_num,1),associations(word_num,2)});
-    A_asp_ratio = As2/As1;
-    A_newh = screenYpixels/6;
-    A_neww = A_asp_ratio*A_newh;
-    A_theRect = [0 0 A_neww A_newh];
-    %Position it in X center and 1/4th way from top.
-    A_dst_rect = CenterRectOnPointd(A_theRect,screenXpixels/2,screenYpixels/6);
-    
-    %Draw the face
-    imageTexture = Screen('MakeTexture',window,faces{associations(word_num,1),associations(word_num,2)});
-    Screen('DrawTexture', window, imageTexture, [], A_dst_rect, 0);
-    
-    % Draw text (word) in the bottom of the screen in black
-    Screen('TextSize', window, 40);
-    Screen('TextFont', window, 'Times');
-    DrawFormattedText(window, dictionary{associations(word_num,3)}, 'center',...
-        screenYpixels * 0.45, [0 0 0]);
-    
-    % Flip to the screen. This command basically draws all of our previous
-    % commands onto the screen. See later demos in the animation section on more
-    % timing details. And how to demos in this section on how to draw multiple
-    % rects at once.
-    % For help see: Screen Flip?
-    Screen('Flip', window);
-    %Wait 5 sec before clearing and displaying next word
-    WaitSecs(5);
-    %Clear screen and display blank for 500 msec
-    Screen('Flip', window);
-    WaitSecs(0.5);
+    if just_record ~= true
+        %Calculate image sizes and scaling.
+        [As1,As2,As3] = size(faces{associations(word_num,1),associations(word_num,2)});
+        A_asp_ratio = As2/As1;
+        A_newh = screenYpixels/6;
+        A_neww = A_asp_ratio*A_newh;
+        A_theRect = [0 0 A_neww A_newh];
+        %Position it in X center and 1/4th way from top.
+        A_dst_rect = CenterRectOnPointd(A_theRect,screenXpixels/2,screenYpixels/6);
+        
+        %Draw the face
+        imageTexture = Screen('MakeTexture',window,faces{associations(word_num,1),associations(word_num,2)});
+        Screen('DrawTexture', window, imageTexture, [], A_dst_rect, 0);
+        
+        % Draw text (word) in the bottom of the screen in black
+        Screen('TextSize', window, 40);
+        Screen('TextFont', window, 'Times');
+        DrawFormattedText(window, dictionary{associations(word_num,3)}, 'center',...
+            screenYpixels * 0.45, [0 0 0]);
+        
+        % Flip to the screen. This command basically draws all of our previous
+        % commands onto the screen. See later demos in the animation section on more
+        % timing details. And how to demos in this section on how to draw multiple
+        % rects at once.
+        % For help see: Screen Flip?
+        Screen('Flip', window);
+        %Wait 5 sec before clearing and displaying next word
+        WaitSecs(5);
+        %Clear screen and display blank for 500 msec
+        Screen('Flip', window);
+        WaitSecs(0.5);
+    end
 end
 
-%stage 6 instructions
-instr_text = ['Good! You just completed the study section.',... 
-    'You will now move onto the test section.\n\n',...
-    'In this section, we will test your memory for what you just saw. ',... 
-    'On each screen answer the question presented based on what you ',...
-    'remember from the study section you just completed.\n\n',...
-    'In the next sections, press Y for ''yes'' and press N for ''no''.',...
-    '\n\n Press any button to continue'];
-Screen('TextSize', window, 24);
-Screen('TextFont', window, 'Times');
-DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], 1.5, [], Instr_dst_rect);
-Screen('Flip', window);
-KbStrokeWait;
+if just_record ~= true
+    %stage 6 instructions
+    instr_text = ['Good! You just completed the study section.',...
+        'You will now move onto the test section.\n\n',...
+        'In this section, we will test your memory for what you just saw. ',...
+        'On each screen answer the question presented based on what you ',...
+        'remember from the study section you just completed.\n\n',...
+        'In the next sections, press Y for ''yes'' and press N for ''no''.',...
+        '\n\n Press any button to continue'];
+    Screen('TextSize', window, 24);
+    Screen('TextFont', window, 'Times');
+    DrawFormattedText(window, instr_text,'wrapat', 'center', black, 70, [], [], 1.5, [], Instr_dst_rect);
+    Screen('Flip', window);
+    KbStrokeWait;
+end
 
 %Stage 6
 %randomly choose 8 associations, 4 critical lures and 4 control lures
@@ -157,14 +181,15 @@ rand_control = randperm(num_control,4);
 %disp_shuffle = randperm(disp_num);
 %disp_matrix = disp_matrix(disp_shuffle,:);
 
-%Making a 16X3 matrix to put in all of my values. Disp_matrix equals the 
+%Making a 16X5 matrix to put in all of my values. Disp_matrix equals the 
 %face word pairs matrix for the test
-disp_matrix = zeros(16,4);
+disp_matrix = zeros(16,5);
 %Just renaming matrices to make referencing easier. Also store what the 
-%correct answer is 1=yes, 2=no. Correct answer is stored in 4th comment
-A=[associations,ones(size(associations,1),1)];
-B=[critical_lures,2*ones(size(critical_lures,1),1)];
-C=[control_lures,2*ones(size(control_lures,1),1)];
+%correct answer is 1=yes, 2=no. Correct answer is stored in 4th column
+%5th column is word type, 1=Associations,2=control lure,3 = Critical Lure
+A=[associations,ones(size(associations,1),1),ones(size(associations,1),1)];
+B=[critical_lures,2*ones(size(critical_lures,1),1),3*ones(size(critical_lures,1),1)];
+C=[control_lures,2*ones(size(control_lures,1),1),2*ones(size(control_lures,1),1)];
 %creating an array that we reference to selectively sample from the A,B,C
 %matrices. We then shuffle it to randomize
 D = [1:size(A,1)];
@@ -193,49 +218,57 @@ disp_matrix = disp_matrix(dispmatrix_shuffle,:);
 
 
 for trial=1:dispmatrix_num
+    %create struct for the trial
+    trial_struct = struct('ID',extra_params.pid,'Cond',extra_params.socialOG,'Stage',6,'Learning_Trial','','Test_Trial','','Test_Trial_Final','',...
+        'Trial_typefish','','WordL_Trial','','WordT_Trial',trial,'Trial_typeword',disp_matrix(trial,5),...
+        'Face',(disp_matrix(trial,1)-1)*2+disp_matrix(trial,2),...
+        'Fish_left','','Fish_right','',...
+        'Word',dictionary{disp_matrix(trial,3)},'Resp','','Ans',-2*mod(disp_matrix(trial,4),2)+1,'Corr','','RT','');
     %Debug print
     disp(['TEST_STAGE:Showing word ' dictionary{disp_matrix(trial,3)} ' for face ' num2str(disp_matrix(trial,1)) ',' num2str(disp_matrix(trial,2))]);
-    %Calculate image sizes and scaling.
-    [As1,As2,As3] = size(faces{disp_matrix(trial,1),disp_matrix(trial,2)});
-    A_asp_ratio = As2/As1;
-    A_newh = screenYpixels/6;
-    A_neww = A_asp_ratio*A_newh;
-    A_theRect = [0 0 A_neww A_newh];
-    %Position it in X center and 1/4th way from top.
-    A_dst_rect = CenterRectOnPointd(A_theRect,screenXpixels/2,screenYpixels/6);
+    if just_record ~= true
+        %Calculate image sizes and scaling.
+        [As1,As2,As3] = size(faces{disp_matrix(trial,1),disp_matrix(trial,2)});
+        A_asp_ratio = As2/As1;
+        A_newh = screenYpixels/6;
+        A_neww = A_asp_ratio*A_newh;
+        A_theRect = [0 0 A_neww A_newh];
+        %Position it in X center and 1/4th way from top.
+        A_dst_rect = CenterRectOnPointd(A_theRect,screenXpixels/2,screenYpixels/6);
+        
+        %Draw the face
+        imageTexture = Screen('MakeTexture',window,faces{disp_matrix(trial,1),disp_matrix(trial,2)});
+        Screen('DrawTexture', window, imageTexture, [], A_dst_rect, 0);
+        
+        % Draw text (word) in the bottom of the screen in black
+        Screen('TextSize', window, 40);
+        Screen('TextFont', window, 'Times');
+        DrawFormattedText(window, dictionary{disp_matrix(trial,3)}, 'center',...
+            screenYpixels * 0.45, [0 0 0]);
+        
+        % Draw text in the bottom of the screen in black
+        Screen('TextSize', window, 40);
+        Screen('TextFont', window, 'Times');
+        DrawFormattedText(window, 'Did this word appear with this face?', 'center',...
+            screenYpixels * 0.65, [0 0 0]);
+        DrawFormattedText(window, 'Yes', screenXpixels * 0.3,...
+            screenYpixels * 0.75, [0 0 0]);
+        DrawFormattedText(window, 'No', screenXpixels * 0.7,...
+            screenYpixels * 0.75, [0 0 0]);
+        
+        % Flip to the screen. This command basically draws all of our previous
+        % commands onto the screen. See later demos in the animation section on more
+        % timing details. And how to demos in this section on how to draw multiple
+        % rects at once.
+        % For help see: Screen Flip?
+        Screen('Flip', window,0,1);
     
-    %Draw the face
-    imageTexture = Screen('MakeTexture',window,faces{disp_matrix(trial,1),disp_matrix(trial,2)});
-    Screen('DrawTexture', window, imageTexture, [], A_dst_rect, 0);
-    
-    % Draw text (word) in the bottom of the screen in black
-    Screen('TextSize', window, 40);
-    Screen('TextFont', window, 'Times');
-    DrawFormattedText(window, dictionary{disp_matrix(trial,3)}, 'center',...
-        screenYpixels * 0.45, [0 0 0]);
-    
-    % Draw text in the bottom of the screen in black
-    Screen('TextSize', window, 40);
-    Screen('TextFont', window, 'Times');
-    DrawFormattedText(window, 'Did this word appear with this face?', 'center',...
-        screenYpixels * 0.65, [0 0 0]);
-    DrawFormattedText(window, 'Yes', screenXpixels * 0.3,...
-        screenYpixels * 0.75, [0 0 0]);
-    DrawFormattedText(window, 'No', screenXpixels * 0.7,...
-        screenYpixels * 0.75, [0 0 0]);
-    
-    % Flip to the screen. This command basically draws all of our previous
-    % commands onto the screen. See later demos in the animation section on more
-    % timing details. And how to demos in this section on how to draw multiple
-    % rects at once.
-    % For help see: Screen Flip?
-    Screen('Flip', window,0,1);
-    
-    %Get positions of Yes/No text to draw outline around chosen value
-    X_theRect = [0 0 100 50];
-    %Position it in X center and 4/6th way from top.
-    X1_dst_rect = CenterRectOnPointd(X_theRect,0.33*screenXpixels,0.78*screenYpixels);
-    X2_dst_rect = CenterRectOnPointd(X_theRect,0.72*screenXpixels,0.78*screenYpixels);
+        %Get positions of Yes/No text to draw outline around chosen value
+        X_theRect = [0 0 100 50];
+        %Position it in X center and 4/6th way from top.
+        X1_dst_rect = CenterRectOnPointd(X_theRect,0.33*screenXpixels,0.78*screenYpixels);
+        X2_dst_rect = CenterRectOnPointd(X_theRect,0.72*screenXpixels,0.78*screenYpixels);
+    end
     
     if observer_mode ~= true
         %accept input and get time
@@ -272,7 +305,7 @@ for trial=1:dispmatrix_num
 %                 return
             end
         end
-    else    %Replay stuff
+    elseif just_record ~= true    %Replay stuff
         %Detect if correct answer
         if recorder.correct_ans(move_index) == recorder.moves(move_index)
             display_color = [0 1 0];
@@ -295,10 +328,22 @@ for trial=1:dispmatrix_num
         Screen('Flip', window);
         %Wait 1 sec before clearing like in non-social input
         WaitSecs(1);
+    else    %Just record case
+        trial_struct.Resp = -2*mod(recorder.moves(move_index),2)+1;
+        trial_struct.RT = recorder.input_timing(move_index);
+        if recorder.correct_ans(move_index) == recorder.moves(move_index)
+            trial_struct.Corr = 1;
+        else
+            trial_struct.Corr = 0;
+        end
+        move_index = move_index + 1;
     end
-    %Clear screen and display blank for 1 sec
-    Screen('Flip', window);
-    WaitSecs(1);
+    restruct = [restruct;trial_struct];
+    if just_record ~= true
+        %Clear screen and display blank for 1 sec
+        Screen('Flip', window);
+        WaitSecs(1);
+    end
 end
 
 out_rngstate = rng;
